@@ -89,7 +89,8 @@ export class ControlPlayer extends EventEmitter {
         this.runVelocity = 20;
         // 跳跃高度
         this.jumpHight = 3.3;
-        this.gameStart = false;
+        this.gameStart = true;
+        this.gameStatus = GAME_STATUS.START;
         this.far = 2.5; // 人物身高
         this.raycasterDown = new THREE.Raycaster();
         this.raycasterFrontDown = new THREE.Raycaster();
@@ -105,6 +106,7 @@ export class ControlPlayer extends EventEmitter {
         this.startGame(currentAction, model);
         this.addAnimationListener();
         this.initRaycaster();
+        this.game.emit('gameStatus', this.gameStatus);
     }
     // 开始游戏初始化
     startGame(currentAction: string, model: THREE.Group) {
@@ -146,17 +148,8 @@ export class ControlPlayer extends EventEmitter {
     addAnimationListener() {
         window.addEventListener('keydown', (e: KeyboardEvent) => {
             const key = e.key;
-            // 开始游戏
-            if (key === 'p') {
-                if (!this.gameStart) {
-                    this.gameStart = true;
-                    this.gameStatus = GAME_STATUS.START;
-                    this.key = 'p';
-                    this.game.emit('gameStatus', this.gameStatus);
-                }
-            }
-            else if (
-                key === 'w'
+            if (
+                key === 'z'
                 && this.status !== playerStatus.JUMP
                 && this.status !== playerStatus.FALL
                 && this.downCollide
@@ -165,7 +158,7 @@ export class ControlPlayer extends EventEmitter {
                     return;
                 }
 
-                this.key = 'w';
+                this.key = 'z';
                 this.downCollide = false;
                 this.isJumping = true;
                 setTimeout(() => {
@@ -184,7 +177,7 @@ export class ControlPlayer extends EventEmitter {
                 this.key = 's';
                 this.fallingSpeed = -5 * 0.1;
             }
-            else if (key === 'a') {
+            else if (key === 'q') {
                 if (!this.gameStart || this.status === playerStatus.DIE) {
                     return;
                 }
@@ -224,7 +217,7 @@ export class ControlPlayer extends EventEmitter {
                 this.way += 1;
             }
             else if (key === 'r') {
-                this.gameStatus = GAME_STATUS.READY;
+                this.gameStatus = GAME_STATUS.START;
                 this.game.emit('gameStatus', this.gameStatus);
                 this.smallMistake = 0;
                 while (this.scene.children.length > 0) {
@@ -447,9 +440,6 @@ handleLeftRightMove() {
         }
         else if (this.roll) {
             this.status = playerStatus.ROLL;
-        }
-        else if (this.key === 'p') {
-            this.status = playerStatus.RUN;
         }
         else if (!this.roll && this.fallingSpeed === 0 && !this.runlookback) {
             this.status = playerStatus.RUN;

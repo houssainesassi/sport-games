@@ -11,17 +11,13 @@ const props = defineProps({
   gameStatus: {type: String, default: 'ready'},
 });
 const keyMap: Record<string, any> = {
-  ready: {
-      key: 'P',
-      text: '开始游戏',
-  },
   end: {
       key: 'R',
       text: '重新开始游戏',
   },
 };
 const textCompute = computed(() => {
-  return keyMap[props.gameStatus];
+  return keyMap[props.gameStatus] || { key: '', text: '' };
 });
 </script>
 
