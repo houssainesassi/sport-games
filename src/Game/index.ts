@@ -73,6 +73,11 @@ export default class Game extends EventEmitter {
         THREE.DefaultLoadingManager.onError = () => {
             this.emit('progress', {type: 'error'});
         };
+        setTimeout(() => {
+            if (!this.player?.controlPlayer) {
+                this.emit('progress', {type: 'successLoad'});
+            }
+        }, 10000);
     }
     removelistener() {
         window.removeEventListener('resize', this.windowResizeFn);

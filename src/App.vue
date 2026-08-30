@@ -40,10 +40,11 @@ const showGuide = computed(() => {
   return gameStatus.value !== 'start';
 });
 
+let gameInstance: Game | null = null;
 onMounted(() => {
-  const game = new Game(exp_canvas.value);
+  gameInstance = new Game(exp_canvas.value);
   // 资源加载
-  game.on('progress', (data: any) => {
+  gameInstance.on('progress', (data: any) => {
     const { type } = data;
     if (type === 'successLoad') {
       loadingData.value.type = 'successLoad';
@@ -53,19 +54,18 @@ onMounted(() => {
       loadingData.value = data;
     }
   });
-  game.on('gameStatus', (data: any) => {
+  gameInstance.on('gameStatus', (data: any) => {
     console.log(data);
     gameStatus.value = data;
   });
-  game.on('gameData', (data: any) => {
+  gameInstance.on('gameData', (data: any) => {
     score.value = data.score;
     coin.value = data.coin;
     mistake.value = data.mistake;
   });
 });
 onUnmounted(() => {
-  const game = new Game(exp_canvas.value);
-  game?.disposeGame();
+  gameInstance?.disposeGame();
 });
 </script>
 

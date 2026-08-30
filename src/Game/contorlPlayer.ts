@@ -151,7 +151,7 @@ export class ControlPlayer extends EventEmitter {
                 if (!this.gameStart) {
                     this.gameStart = true;
                     this.gameStatus = GAME_STATUS.START;
-                    this.key === 'p';
+                    this.key = 'p';
                     this.game.emit('gameStatus', this.gameStatus);
                 }
             }
@@ -306,12 +306,15 @@ handleLeftRightMove() {
             case Side.FRONT:
                 this.raycasterFront.ray.origin = new THREE.Vector3(x, y + 2, z - 1);
                 this.raycasterFront.far = far;
+                break;
             case Side.LEFT:
                 this.raycasterLeft.ray.origin = new THREE.Vector3(x + 0.5, y + 2, z);
                 this.raycasterLeft.far = far;
+                break;
             case Side.RIGHT:
                 this.raycasterRight.ray.origin = new THREE.Vector3(x - 0.5, y + 2, z);
                 this.raycasterRight.far = far;
+                break;
         }
         // const arrowHelper = new THREE.ArrowHelper(
         //     this.raycasterFront.ray.direction,
