@@ -104,6 +104,8 @@ export default class Player extends EventEmitter {
         }
         this.playerScene = playerScene;
         this.scene.add(playerScene);
+        // 只隐藏可见模型，位置/动画/碰撞检测都仍然基于这个对象，逻辑完全不变
+        playerScene.visible = false;
         this.light = new THREE.DirectionalLight(0xffffff, 1);
         this.light.position.set(0, 10, 5);
         this.light.lookAt(new THREE.Vector3(0, 100, 5));

@@ -26,6 +26,10 @@ export default function ScorePanel({score = 0, coin = 0, mistake = 0}: ScorePane
                     height: 100vh;
                     position: relative;
                     z-index: 999;
+                    /* purely a positioning wrapper for the score badge; must not
+                       swallow clicks meant for anything rendered above it (e.g.
+                       the Game Over / Play Again button) */
+                    pointer-events: none;
                 }
 
                 .score_panel {

@@ -3,66 +3,70 @@
 interface GameGuideProps {
     showMask: boolean;
     gameStatus: string;
+    onPlayAgain: () => void;
 }
 
-interface GuideText {
-    key: string;
-    text: string;
-}
-
-const keyMap: Record<string, GuideText> = {
-    ready: {
-        key: '',
-        text: '请站到摄像头前，身体将自动开始游戏（或按 P 键作为备用方式）',
-    },
-    end: {
-        key: 'R',
-        text: '重新开始游戏',
-    },
-};
-
-export default function GameGuide({showMask, gameStatus}: GameGuideProps) {
-    const textCompute = keyMap[gameStatus];
-    if (!showMask || !textCompute) {
+export default function GameGuide({showMask, gameStatus, onPlayAgain}: GameGuideProps) {
+    if (!showMask || gameStatus !== 'end') {
         return null;
     }
     return (
-        <div className="game-mask">
-            <div className="message">
-                {textCompute.key ? (
-                    <>
-                        请按下<span className="key">{textCompute.key}</span>
-                        {textCompute.text}
-                    </>
-                ) : (
-                    textCompute.text
-                )}
+        <div className="game-over">
+            <div className="card">
+                <div className="title">Game Over</div>
+                <button className="play-again" onClick={onPlayAgain}>
+                    Play Again
+                </button>
             </div>
             <style jsx>{`
-                .game-mask {
+                .game-over {
                     position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.6);
+                    inset: 0;
+                    background: rgba(15, 15, 20, 0.72);
+                    backdrop-filter: blur(4px);
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     z-index: 999;
                 }
 
-                .message {
-                    font-size: 24px;
-                    color: white;
-                    text-align: center;
+                .card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
+                    padding: 40px 56px;
+                    background: rgba(30, 32, 40, 0.92);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    border-radius: 16px;
+                    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
                 }
 
-                .key {
-                    background-color: #3498db;
-                    color: white;
-                    padding: 5px 10px;
-                    border-radius: 5px;
+                .title {
+                    font-size: 32px;
+                    font-weight: 700;
+                    color: #fff;
+                    letter-spacing: 0.02em;
+                }
+
+                .play-again {
+                    padding: 12px 32px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #fff;
+                    background: #3498db;
+                    border: none;
+                    border-radius: 999px;
+                    cursor: pointer;
+                    transition: background-color 0.15s ease, transform 0.1s ease;
+                }
+
+                .play-again:hover {
+                    background: #2f86c2;
+                }
+
+                .play-again:active {
+                    transform: scale(0.97);
                 }
             `}</style>
         </div>

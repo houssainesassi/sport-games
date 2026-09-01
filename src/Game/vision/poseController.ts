@@ -67,7 +67,13 @@ export class PoseController extends EventEmitter {
             this.emit('personDetected');
         }
 
-        // 水平方向做镜像，符合用户在预览画面中看到的直觉方向
+        // 坐标映射说明（LEFT/RIGHT车道方向的唯一来源，出问题只需改这一行）：
+        // MediaPipe用的是摄像头原始画面（未镜像）坐标：x=0是画面左边，x=1是画面右边。
+        // 人和摄像头面对面，人物身体整体往自己的右边移动时，在原始画面里是往左边移动的
+        // （landmark x变小），所以这里用 `1 - x` 翻转一次，使得"身体往自己右边移动"
+        // 对应 rawX 变大 -> normalizedX为正 -> LaneState.RIGHT，与游戏画面里角色向右对应。
+        // 如果实际测试中发现方向相反（部分浏览器/摄像头驱动会预先镜像画面），
+        // 把 `1 - (ls.x + rs.x) / 2` 改成 `(ls.x + rs.x) / 2` 即可反转左右映射。
         const rawX = 1 - (ls.x + rs.x) / 2;
         const rawY = (ls.y + rs.y) / 2;
         const shoulderWidth = Math.max(Math.abs(ls.x - rs.x), 0.05);

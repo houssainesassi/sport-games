@@ -1,10 +1,11 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import ScorePanel from './ScorePanel';
 import GameGuide from './GameGuide';
 import WebcamPanel from './WebcamPanel';
 import Game from '@/Game';
+import type {ControlPlayer} from '@/Game/contorlPlayer';
 
 interface LoadingData {
     type?: string;
@@ -56,7 +57,20 @@ export default function GameApp() {
         };
     }, []);
 
-    const showGuide = gameStatus !== 'start';
+    const handlePlayAgain = useCallback(() => {
+        const player = gameRef.current?.player;
+        const controlPlayer = player?.controlPlayer;
+        if (!player || !controlPlayer) {
+            return;
+        }
+        // triggerRestart() rebuilds the environment/player and emits a fresh
+        // ControlPlayer via 'controlPlayerReady'; start that new instance right away
+        // so the run resumes immediately instead of waiting for a new calibration.
+        player.once('controlPlayerReady', (freshControlPlayer: ControlPlayer) => {
+            freshControlPlayer.triggerStart();
+        });
+        controlPlayer.triggerRestart();
+    }, []);
 
     return (
         <div>
@@ -74,7 +88,7 @@ export default function GameApp() {
                     {loadingData.type === 'successLoad' && <div>加载成功， 稍等片刻</div>}
                 </div>
             )}
-            <GameGuide showMask={isReady && showGuide} gameStatus={gameStatus} />
+            <GameGuide showMask={isReady} gameStatus={gameStatus} onPlayAgain={handlePlayAgain} />
             <ScorePanel score={score} coin={coin} mistake={mistake} />
             <div className="experience">
                 <canvas ref={canvasRef} className="experience__canvas"></canvas>

@@ -86,8 +86,8 @@ export class ControlPlayer extends EventEmitter {
         this.allAnimate = allAnimate;
         // 跑步速度
         this.runVelocity = 20;
-        // 跳跃高度
-        this.jumpHight = 3.3;
+        // 跳跃高度（略微提高，同样的重力/碰撞逻辑，只是初始冲量更大一点）
+        this.jumpHight = 3.8;
         this.gameStart = false;
         this.far = 2.5; // 人物身高
         this.raycasterDown = new THREE.Raycaster();
