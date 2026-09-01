@@ -5,8 +5,7 @@ import Environment, {roadLength, roadWidth} from './environment';
 import * as THREE from 'three';
 import {EventEmitter} from 'events';
 import Player from './player';
-// @ts-ignore
-import showToast from '../components/Toast/index.js';
+import showToast from '../components/Toast/showToast';
 enum Side {
     FRONT,
     BACK,
@@ -89,8 +88,7 @@ export class ControlPlayer extends EventEmitter {
         this.runVelocity = 20;
         // 跳跃高度
         this.jumpHight = 3.3;
-        this.gameStart = true;
-        this.gameStatus = GAME_STATUS.START;
+        this.gameStart = false;
         this.far = 2.5; // 人物身高
         this.raycasterDown = new THREE.Raycaster();
         this.raycasterFrontDown = new THREE.Raycaster();
@@ -106,7 +104,6 @@ export class ControlPlayer extends EventEmitter {
         this.startGame(currentAction, model);
         this.addAnimationListener();
         this.initRaycaster();
-        this.game.emit('gameStatus', this.gameStatus);
     }
     // 开始游戏初始化
     startGame(currentAction: string, model: THREE.Group) {
@@ -144,90 +141,126 @@ export class ControlPlayer extends EventEmitter {
         this.raycasterDown.far = 5.8;
         this.raycasterFrontDown.far = 3;
     }
-    // @ts-ignore
+    // 键盘监听：移动类按键(a/w/s/d)已移除，仅保留开始/重开这两个非移动的游戏流程按键
+    // 作为摄像头不可用时的兜底方式。真正的移动输入现在来自MediaPipe姿态控制（见下方trigger*方法）
     addAnimationListener() {
         window.addEventListener('keydown', (e: KeyboardEvent) => {
             const key = e.key;
-            if (
-                key === 'z'
-                && this.status !== playerStatus.JUMP
-                && this.status !== playerStatus.FALL
-                && this.downCollide
-            ) {
-                if (!this.gameStart || this.status === playerStatus.DIE) {
-                    return;
-                }
-
-                this.key = 'z';
-                this.downCollide = false;
-                this.isJumping = true;
-                setTimeout(() => {
-                    this.isJumping = false;
-                }, 50);
-                this.fallingSpeed += this.jumpHight * 0.1;
-            }
-            else if (key === 's' && !this.roll && this.status !== playerStatus.ROLL) {
-                if (!this.gameStart || this.status === playerStatus.DIE) {
-                    return;
-                }
-                this.roll = true;
-                setTimeout(() => {
-                    this.roll = false;
-                }, 620);
-                this.key = 's';
-                this.fallingSpeed = -5 * 0.1;
-            }
-            else if (key === 'q') {
-                if (!this.gameStart || this.status === playerStatus.DIE) {
-                    return;
-                }
-                // 位于最左边的道路
-                if (this.way === 1) {
-                    this.runlookback = true;
-                    this.emit('collision');
-                    showToast('撞到障碍物！请注意！！！');
-                    setTimeout(() => {
-                        this.runlookback = false;
-                    }, 1040);
-                    this.smallMistake += 1;
-                    return;
-                }
-                this.way -= 1;
-                this.originLocation = this.model.position.clone();
-                this.lastPosition = this.model.position.clone().x;
-                this.targetPosition -= roadWidth / 3;
-            }
-            else if (key === 'd') {
-                if (!this.gameStart || this.status === playerStatus.DIE) {
-                    return;
-                }
-                if (this.way === 3) {
-                    this.runlookback = true;
-                    this.emit('collision');
-                    showToast('撞到障碍物！请注意！！！');
-                    setTimeout(() => {
-                        this.runlookback = false;
-                    }, 1040);
-                    this.smallMistake += 1;
-                    return;
-                }
-                this.originLocation = this.model.position.clone();
-                this.lastPosition = this.model.position.clone().x;
-                this.targetPosition += roadWidth / 3;
-                this.way += 1;
+            if (key === 'p') {
+                this.triggerStart();
             }
             else if (key === 'r') {
-                this.gameStatus = GAME_STATUS.START;
-                this.game.emit('gameStatus', this.gameStatus);
-                this.smallMistake = 0;
-                while (this.scene.children.length > 0) {
-                    this.scene.remove(this.scene.children[0]);
-                }
-                // disposeNode(this.scene);
-                this.environement.startGame();
-                this.player.createPlayer(false);
+                this.triggerRestart();
             }
         });
+    }
+    // 开始游戏（原键盘'p'的逻辑，现由姿态检测到有效人体后自动调用，也可作为兜底手动调用）
+    triggerStart() {
+        if (!this.gameStart) {
+            this.gameStart = true;
+            this.gameStatus = GAME_STATUS.START;
+            this.game.emit('gameStatus', this.gameStatus);
+        }
+    }
+    // 跳跃（原键盘'w'的逻辑）
+    triggerJump() {
+        if (this.status === playerStatus.JUMP || this.status === playerStatus.FALL || !this.downCollide) {
+            return;
+        }
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        this.key = 'w';
+        this.downCollide = false;
+        this.isJumping = true;
+        setTimeout(() => {
+            this.isJumping = false;
+        }, 50);
+        this.fallingSpeed += this.jumpHight * 0.1;
+    }
+    // 下蹲/翻滚（原键盘's'的逻辑）
+    triggerCrouch() {
+        if (this.roll || this.status === playerStatus.ROLL) {
+            return;
+        }
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        this.roll = true;
+        setTimeout(() => {
+            this.roll = false;
+        }, 620);
+        this.key = 's';
+        this.fallingSpeed = -5 * 0.1;
+    }
+    // 左移一条车道（原键盘'a'的逻辑）
+    triggerMoveLeft() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        // 位于最左边的道路
+        if (this.way === 1) {
+            this.runlookback = true;
+            this.emit('collision');
+            showToast('撞到障碍物！请注意！！！');
+            setTimeout(() => {
+                this.runlookback = false;
+            }, 1040);
+            this.smallMistake += 1;
+            return;
+        }
+        this.way -= 1;
+        this.originLocation = this.model.position.clone();
+        this.lastPosition = this.model.position.clone().x;
+        this.targetPosition -= roadWidth / 3;
+    }
+    // 右移一条车道（原键盘'd'的逻辑）
+    triggerMoveRight() {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        if (this.way === 3) {
+            this.runlookback = true;
+            this.emit('collision');
+            showToast('撞到障碍物！请注意！！！');
+            setTimeout(() => {
+                this.runlookback = false;
+            }, 1040);
+            this.smallMistake += 1;
+            return;
+        }
+        this.originLocation = this.model.position.clone();
+        this.lastPosition = this.model.position.clone().x;
+        this.targetPosition += roadWidth / 3;
+        this.way += 1;
+    }
+    // 重新开始（原键盘'r'的逻辑）
+    triggerRestart() {
+        this.gameStatus = GAME_STATUS.READY;
+        this.game.emit('gameStatus', this.gameStatus);
+        this.smallMistake = 0;
+        while (this.scene.children.length > 0) {
+            this.scene.remove(this.scene.children[0]);
+        }
+        this.environement.startGame();
+        this.player.createPlayer(false);
+    }
+    // 将车道设置为绝对目标车道(1=左, 2=中, 3=右)，供姿态控制的LEFT/CENTER/RIGHT状态调用
+    // way在原有实现中是相对步进的（每次调用左右移动一格），这里通过多次调用触发同样的
+    // 碰撞保护/动画逻辑来达到目标车道，不引入新的定位体系
+    setLaneTarget(targetLane: 1 | 2 | 3) {
+        if (!this.gameStart || this.status === playerStatus.DIE) {
+            return;
+        }
+        const diff = targetLane - this.way;
+        for (let i = 0; i < Math.abs(diff); i++) {
+            if (diff > 0) {
+                this.triggerMoveRight();
+            }
+            else {
+                this.triggerMoveLeft();
+            }
+        }
     }
 // 左右移动控制
 handleLeftRightMove() {

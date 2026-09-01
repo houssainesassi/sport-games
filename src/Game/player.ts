@@ -127,6 +127,7 @@ export default class Player extends EventEmitter {
                 this.collision = false;
             }, 300);
         });
+        this.emit('controlPlayerReady', control);
     }
     updateCamrera(delta: number) {
         const playerPosition = this.playerScene?.position;
